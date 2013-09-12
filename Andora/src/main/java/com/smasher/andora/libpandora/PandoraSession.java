@@ -54,7 +54,7 @@ public class PandoraSession {
         reset();
         int id = premium?Partner.PARTNER_PANDORA_ONE:Partner.PARTNER_ANDROID;
         if (partner==null || partner.getId()!=id) {
-            if (! partnerLogin(id))
+            if (!partnerLogin(id))
                 return false;
         }
 
@@ -101,6 +101,18 @@ public class PandoraSession {
             e.printStackTrace();
         }
         log("User login failed.");
+        return false;
+    }
+
+    public boolean isPremium() {
+        try {
+            JSONObject result = sendRequest("user.canSubscribe", null, true, true);
+            if (result != null) {
+                return result.getBoolean("isSubscriber");
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
         return false;
     }
 

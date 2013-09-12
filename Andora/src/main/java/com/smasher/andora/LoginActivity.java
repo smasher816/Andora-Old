@@ -9,6 +9,7 @@ import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
 import android.text.TextUtils;
+import android.util.Log;
 import android.view.KeyEvent;
 import android.view.Menu;
 import android.view.View;
@@ -27,9 +28,6 @@ public class LoginActivity extends Activity {
     // Keep track of the login task to ensure we can cancel it if requested.
     private UserLoginTask mAuthTask = null;
 
-    //private String mEmail;
-    //private String mPassword;
-
     private EditText mEmailView;
     private EditText mPasswordView;
     private View mLoginFormView;
@@ -43,9 +41,7 @@ public class LoginActivity extends Activity {
         setContentView(R.layout.activity_login);
 
         // Set up the login form.
-        //mEmail = getIntent().getStringExtra(EXTRA_EMAIL);
         mEmailView = (EditText) findViewById(R.id.email);
-        //mEmailView.setText(mEmail);
 
         mPasswordView = (EditText) findViewById(R.id.password);
         mPasswordView.setOnEditorActionListener(new TextView.OnEditorActionListener() {
@@ -181,20 +177,38 @@ public class LoginActivity extends Activity {
      * the user.
      */
     public class UserLoginTask extends AsyncTask<String, Void, Boolean> {
+        PandoraSession pandora;
         String error = "";
+
+        UserLoginTask() {
+            pandora = new PandoraSession();
+        }
+
+        boolean login(String email, String password, boolean premium) {
+            try {
+                if (pandora.login(email, password, premium))
+                    return true;
+            } catch (PandoraException e) {
+                error = e.getMessage();
+            }
+            return false;
+        }
 
         @Override
         protected Boolean doInBackground(String... params) {
             String email = params[0];
             String password = params[1];
 
-            PandoraSession pandora = new PandoraSession();
-            try {
-                if (pandora.login(email, password, true))
+            boolean ret = login(email, password, true);
+            if (ret) {
+                if (pandora.isPremium()) {
                     return true;
-            } catch (PandoraException e) {
-                error = e.getMessage();
+                } else {
+                    Log.d("Andora", "/Login: "+"User does not support Pandora One. Reverting to normal connection.");
+                    return login(email, password, false);
+                }
             }
+
             return false;
         }
 
