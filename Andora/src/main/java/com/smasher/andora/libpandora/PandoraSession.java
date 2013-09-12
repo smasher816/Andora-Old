@@ -116,12 +116,55 @@ public class PandoraSession {
         return false;
     }
 
+    public boolean createUser(String email, String password, int year, String zip, String gender, boolean opt) throws PandoraException {
+        try {
+            JSONObject json = new JSONObject();
+            json.put("accountType", "registered");
+            json.put("registeredType", "user");
+            json.put("countryCode", "US");
+            json.put("username", email);
+            json.put("password", password);
+            json.put("birthYear", year);
+            json.put("zipCode", zip);
+            json.put("gender", gender);
+            json.put("emailOptIn", opt);
+            JSONObject result = sendRequest("user.createUser", json, true, true);
+            if (result != null) {
+                userId = result.getInt("userId");
+                userToken = result.getString("userAuthToken");
+                log("Account creation successful.");
+                return true;
+            }
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+        log("Account creation failed.");
+        return false;
+    }
+
+    public boolean emailPassword(String email) throws PandoraException {
+        try {
+            JSONObject json = new JSONObject();
+            json.put("username", email);
+            sendRequest("user.emailPassword", json, true, true);
+            log("Password emailed.");
+            return true;
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+        return false;
+    }
+
     //////////
 
     JSONObject sendRequest(String method, JSONObject data, boolean tls, boolean enc) throws PandoraException {
         JSONObject result;
 
         try {
+            if (partner==null) {
+                log("Error: Must call parter login first");
+                return null;
+            }
             String url = (tls?"https://":"http://") + partner.getHost() + path + "?method="+method;
             if (userToken != null) url += "&auth_token="+urlEncode(userToken);
             else if (partnerToken != null) url += "&auth_token="+urlEncode(partnerToken);

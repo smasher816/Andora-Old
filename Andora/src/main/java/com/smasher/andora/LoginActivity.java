@@ -112,7 +112,7 @@ public class LoginActivity extends Activity {
             mEmailView.setError(getString(R.string.error_field_required));
             focusView = mEmailView;
             cancel = true;
-        } else if (!email.contains("@") && !email.contains(".")) {
+        } else if (!email.contains("@") && !email.contains(".") || email.contains(" ")) {
             mEmailView.setError(getString(R.string.error_invalid_email));
             focusView = mEmailView;
             cancel = true;
@@ -204,7 +204,7 @@ public class LoginActivity extends Activity {
                 if (pandora.isPremium()) {
                     return true;
                 } else {
-                    Log.d("Andora", "/Login: "+"User does not support Pandora One. Reverting to normal connection.");
+                    Log.d("Andora", "/Login: " + "User does not support Pandora One. Reverting to normal connection.");
                     return login(email, password, false);
                 }
             }
