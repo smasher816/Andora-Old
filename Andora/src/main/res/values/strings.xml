@@ -7,11 +7,23 @@
     <string name="prompt_email">Email</string>
     <string name="prompt_password">Password</string>
     <string name="action_sign_in">Sign in</string>
-
-    <string name="login_progress_signing_in">Signing in&#8230;</string>
+    <string name="action_forgot_password">Forgot password</string>
+    <string name="action_create_account">Create account</string>
 
     <string name="error_invalid_email">This email address is invalid</string>
+    <string name="error_email_exists">This email is already in use</string>
+    <string name="error_unused_email">This email does not have a Pandora account</string>
     <string name="error_invalid_password">This password is too short</string>
     <string name="error_incorrect_password">This password is incorrect</string>
-    <string name="error_field_required">This field is required</string>
+    <string name="error_invalid_year">This year is invalid</string>
+    <string name="error_under_age">You are too young</string>
+    <string name="error_invalid_zip">This zip code is invalid</string>
+
+    <string name="login_progress_signing_in">Signing in&#8230;</string>
+    <string name="error_login_failure">Invalid username or password</string>
+
+    <string-array name="gender_array">
+        <item>Male</item>
+        <item>Female</item>
+    </string-array>
 </resources>

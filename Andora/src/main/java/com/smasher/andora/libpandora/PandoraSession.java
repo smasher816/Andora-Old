@@ -29,39 +29,31 @@ import javax.crypto.spec.SecretKeySpec;
  */
 public class PandoraSession {
     public static final boolean DEBUG_JSON = true;
-
     public static final String path = "/services/json/";
     public static final String cipher = "Blowfish/ECB/PKCS5Padding";
     public static final String charSet = "UTF-8";
 
     private Partner partner;
-
     private long syncTime;
     private int partnerId, userId;
     private String partnerToken, userToken;
 
-    private void reset() {
+    private void resetPartner() {
         // We must clear the tokens so that they are not sent with the next login attempt
         partner = null;
         syncTime = 0;
         partnerId = 0;
-        userId = 0;
         partnerToken = null;
+        resetUser();
+    }
+
+    private void resetUser() {
+        userId = 0;
         userToken = null;
     }
 
-    public boolean login(String email, String password, boolean premium) throws PandoraException {
-        reset();
-        int id = premium?Partner.PARTNER_PANDORA_ONE:Partner.PARTNER_ANDROID;
-        if (partner==null || partner.getId()!=id) {
-            if (!partnerLogin(id))
-                return false;
-        }
-
-        return userLogin(email, password);
-    }
-
     public boolean partnerLogin(int id) throws PandoraException {
+        resetPartner();
         try {
             partner = new Partner(id);
             JSONObject json = new JSONObject();
@@ -85,6 +77,7 @@ public class PandoraSession {
     }
 
     public boolean userLogin(String email, String password) throws PandoraException {
+        resetUser();
         try {
             JSONObject json = new JSONObject();
             json.put("loginType", "user");

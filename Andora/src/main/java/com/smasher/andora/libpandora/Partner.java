@@ -9,7 +9,7 @@ package com.smasher.andora.libpandora;
  * <strong>NOTE: If Pandora changes their keys it must be reflected here.</strong>
  */
 
-class Partner {
+public class Partner {
     public static final int PARTNER_ANDROID = 1;
     public static final int PARTNER_PANDORA_ONE = 2;
     public static final int PARTNER_IOS = 3;

@@ -12,14 +12,21 @@ import android.text.TextUtils;
 import android.util.Log;
 import android.view.KeyEvent;
 import android.view.Menu;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.inputmethod.EditorInfo;
+import android.widget.ArrayAdapter;
+import android.widget.Button;
+import android.widget.CheckBox;
 import android.widget.EditText;
+import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
+import android.text.format.Time;
 
 import com.smasher.andora.libpandora.PandoraException;
 import com.smasher.andora.libpandora.PandoraSession;
+import com.smasher.andora.libpandora.Partner;
 
 /**
  * Log into Pandora
@@ -28,14 +35,24 @@ public class LoginActivity extends Activity {
     // Keep track of the login task to ensure we can cancel it if requested.
     private UserLoginTask mAuthTask = null;
 
-    private EditText mEmailView;
-    private EditText mPasswordView;
+    EditText mEmailView;
+    EditText mPasswordView;
+    EditText mYearView;
+    EditText mZipView;
+    private Spinner mGenderView;
+    private CheckBox mCheckView;
+
     private View mLoginFormView;
     private View mLoginStatusView;
     private TextView mLoginStatusMessageView;
 
+    private enum LoginType { SIGN_IN, CREATE_ACCOUNT, FORGOT_PASSWORD }
+    LoginType loginMode = LoginType.SIGN_IN;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        //setTheme(android.R.style.Theme_Holo);
+        //setTheme(android.R.style.Theme_Holo_Light);
         super.onCreate(savedInstanceState);
 
         setContentView(R.layout.activity_login);
@@ -55,6 +72,14 @@ public class LoginActivity extends Activity {
             }
         });
 
+        mYearView = (EditText) findViewById(R.id.year);
+        mZipView = (EditText) findViewById(R.id.zip);
+
+        mGenderView = (Spinner) findViewById(R.id.gender);
+        ArrayAdapter<CharSequence> adapter = ArrayAdapter.createFromResource(this, R.array.gender_array, android.R.layout.simple_spinner_dropdown_item);
+        mGenderView.setAdapter(adapter);
+
+        mCheckView = (CheckBox) findViewById(R.id.optIn);
         mLoginFormView = findViewById(R.id.login_form);
         mLoginStatusView = findViewById(R.id.login_status);
         mLoginStatusMessageView = (TextView) findViewById(R.id.login_status_message);
@@ -75,6 +100,23 @@ public class LoginActivity extends Activity {
         return true;
     }
 
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        switch(item.getItemId()) {
+            case R.id.action_sign_in:
+                showScreen(LoginType.SIGN_IN);
+                return true;
+            case R.id.action_forgot_password:
+                showScreen(LoginType.FORGOT_PASSWORD);
+                return true;
+            case R.id.action_create_account:
+                showScreen(LoginType.CREATE_ACCOUNT);
+                return true;
+            default:
+                return super.onOptionsItemSelected(item);
+        }
+    }
+
     /**
      * Attempts to sign in or register the account specified by the login form.
      * If there are form errors (invalid email, missing fields, etc.), the
@@ -88,48 +130,93 @@ public class LoginActivity extends Activity {
         // Reset errors.
         mEmailView.setError(null);
         mPasswordView.setError(null);
+        mYearView.setError(null);
+        mZipView.setError(null);
 
         // Store values at the time of the login attempt.
         String email = mEmailView.getText().toString();
         String password = mPasswordView.getText().toString();
+        String year = mYearView.getText().toString();
+        String zip = mZipView.getText().toString();
+        String gender = (mGenderView.getSelectedItemPosition()==0) ? "male" : "female";
+        boolean opt = mCheckView.isChecked();
 
+        //View focusView = null;
         boolean cancel = false;
-        View focusView = null;
+        int iYear = 0;
 
-        // Check for a valid password.
-        if (TextUtils.isEmpty(password)) {
-            mPasswordView.setError(getString(R.string.error_field_required));
-            focusView = mPasswordView;
-            cancel = true;
-        } else if (password.length() < 5) {
-            mPasswordView.setError(getString(R.string.error_invalid_password));
-            focusView = mPasswordView;
-            cancel = true;
+        if (loginMode == LoginType.CREATE_ACCOUNT) {
+            // Check for a valid zip code.
+            if (!zip.matches("^\\d{5}([\\-]?\\d{4})?$")) {
+                cancel = handleError(PandoraException.ZIP_CODE_INVALID);
+            }
+
+            // Check for a valid birth year.
+            if (!year.matches("^\\d{4}")) {
+                cancel = handleError(PandoraException.BIRTH_YEAR_INVALID);
+            } else {
+                try {
+                    iYear = Integer.parseInt(year);
+                    Time time = new Time();
+                    time.setToNow();
+
+                    if (iYear<1900)
+                        cancel = handleError(PandoraException.BIRTH_YEAR_INVALID);
+                    else if (iYear>time.year-13)
+                        cancel = handleError(PandoraException.BIRTH_YEAR_TOO_YOUNG);
+                } catch (NumberFormatException e) {
+                    cancel = handleError(PandoraException.BIRTH_YEAR_INVALID);
+                }
+            }
+        }
+
+        if (loginMode != LoginType.FORGOT_PASSWORD) {
+            // Check for a valid password.
+            if (password.length() < 5) {
+                cancel = handleError(PandoraException.INVALID_PASSWORD);
+            }
         }
 
         // Check for a valid email address.
-        if (TextUtils.isEmpty(email)) {
-            mEmailView.setError(getString(R.string.error_field_required));
-            focusView = mEmailView;
-            cancel = true;
-        } else if (!email.contains("@") && !email.contains(".") || email.contains(" ")) {
-            mEmailView.setError(getString(R.string.error_invalid_email));
-            focusView = mEmailView;
-            cancel = true;
+        if (!email.contains("@") || !email.contains(".") || email.contains(" ")) {
+            cancel = handleError(PandoraException.INVALID_USERNAME);
         }
 
-        if (cancel) {
-            // There was an error; don't attempt login and focus the first
-            // form field with an error.
-            focusView.requestFocus();
-        } else {
-            // Show a progress spinner, and kick off a background task to
-            // perform the user login attempt.
+        if (!cancel) {
+            // Show a progress spinner, and kick off a background task
             mLoginStatusMessageView.setText(R.string.login_progress_signing_in);
             showProgress(true);
-            mAuthTask = new UserLoginTask();
-            mAuthTask.execute(email, password);
+            mAuthTask = new UserLoginTask(loginMode, email, password, iYear, zip, gender, opt);
+            mAuthTask.execute();
         }
+    }
+
+    private void showScreen(final LoginType type) {
+        loginMode = type;
+
+        String str;
+        boolean showPassword = false;
+        boolean showCreation = false;
+
+        switch (type) {
+            case FORGOT_PASSWORD:
+                str = getString(R.string.action_forgot_password);
+                showPassword = true;
+                break;
+            case CREATE_ACCOUNT:
+                str = getString(R.string.action_create_account);
+                showCreation = true;
+                break;
+            default:
+                str = getString(R.string.action_sign_in);
+        }
+
+        mPasswordView.setVisibility(showPassword ? View.GONE : View.VISIBLE);
+        mYearView.setVisibility(showCreation ? View.VISIBLE : View.GONE);
+        mZipView.setVisibility(showCreation ? View.VISIBLE : View.GONE);
+        mGenderView.setVisibility(showCreation ? View.VISIBLE : View.GONE);
+        mCheckView.setVisibility(showCreation ? View.VISIBLE : View.GONE);
+        ((Button)findViewById(R.id.sign_in_button)).setText(str);
     }
 
     /**
@@ -172,41 +259,103 @@ public class LoginActivity extends Activity {
         }
     }
 
+    protected boolean handleError(int code) {
+        switch (code) {
+            case PandoraException.INVALID_LOGIN:
+                Toast.makeText(LoginActivity.this, getString(R.string.error_login_failure), Toast.LENGTH_LONG).show();
+                return true;
+            case PandoraException.INVALID_USERNAME:
+                mEmailView.setError(getString(R.string.error_invalid_email));
+                mEmailView.requestFocus();
+                return true;
+            case PandoraException.INVALID_PASSWORD:
+                mPasswordView.setError(getString(R.string.error_invalid_password));
+                mPasswordView.requestFocus();
+                return true;
+            case PandoraException.USERNAME_ALREADY_EXISTS:
+                mEmailView.setError(getString(R.string.error_email_exists));
+                mEmailView.requestFocus();
+                return true;
+            case PandoraException.ZIP_CODE_INVALID:
+                mZipView.setError(getString(R.string.error_invalid_zip));
+                mZipView.requestFocus();
+                return true;
+            case PandoraException.BIRTH_YEAR_INVALID:
+                mYearView.setError(getString(R.string.error_invalid_year));
+                mYearView.requestFocus();
+                return true;
+            case PandoraException.BIRTH_YEAR_TOO_YOUNG:
+                mYearView.setError(getString(R.string.error_under_age));
+                mYearView.requestFocus();
+                return true;
+            case PandoraException.INVALID_EMAIL:
+                mEmailView.setError(getString(R.string.error_email_exists));
+                mEmailView.requestFocus();
+                return true;
+            default:
+                return false;
+        }
+    }
+
     /**
      * Represents an asynchronous login/registration task used to authenticate
      * the user.
      */
-    public class UserLoginTask extends AsyncTask<String, Void, Boolean> {
+    public class UserLoginTask extends AsyncTask<Void, Void, Boolean> {
         PandoraSession pandora;
-        String error = "";
+        LoginType mode;
+        String email, password, zip, gender;
+        int year;
+        boolean opt;
 
-        UserLoginTask() {
+        boolean premium;
+        String message;
+        int code = -1;
+
+        UserLoginTask(LoginType mode, String email, String password, int year, String zip, String gender, boolean opt) {
             pandora = new PandoraSession();
-        }
-
-        boolean login(String email, String password, boolean premium) {
-            try {
-                if (pandora.login(email, password, premium))
-                    return true;
-            } catch (PandoraException e) {
-                error = e.getMessage();
-            }
-            return false;
+            this.mode = mode;
+            this.email = email;
+            this.password = password;
+            this.year = year;
+            this.zip = zip;
+            this.gender = gender;
+            this.opt = opt;
         }
 
         @Override
-        protected Boolean doInBackground(String... params) {
-            String email = params[0];
-            String password = params[1];
+        protected Boolean doInBackground(Void... params) {
+            try {
+                pandora.partnerLogin(Partner.PARTNER_ANDROID);
 
-            boolean ret = login(email, password, true);
-            if (ret) {
-                if (pandora.isPremium()) {
-                    return true;
-                } else {
-                    Log.d("Andora", "/Login: " + "User does not support Pandora One. Reverting to normal connection.");
-                    return login(email, password, false);
+                switch (mode) {
+                    case SIGN_IN: {
+                        pandora.userLogin(email, password);
+                        premium = pandora.isPremium();
+                        if (premium) {
+                            Log.d("Andora", "/Login: " + "User supports Pandora One. Upgrading connection.");
+                            pandora.partnerLogin(Partner.PARTNER_PANDORA_ONE);
+                            pandora.userLogin(email, password);
+                            message = "Thank you for using Pandora One!";
+                        } else {
+                            message = "Please consider upgrading to Pandora One.";
+                        }
+                        return true;
+                    }
+                    case FORGOT_PASSWORD: {
+                        pandora.emailPassword(email);
+                        message = "Password emailed to " + email;
+                        return false;
+                    }
+                    case CREATE_ACCOUNT: {
+                        pandora.createUser(email, password, year, zip, gender, opt);
+                        message = "Welcome to Andora";
+                        return true;
+                    }
                 }
+            } catch (PandoraException e) {
+                code = e.getCode();
+                message = e.getMessage();
             }
 
             return false;
@@ -221,10 +370,14 @@ public class LoginActivity extends Activity {
                 Intent intent = new Intent(LoginActivity.this, MainActivity.class);
                 startActivity(intent);
             } else {
-                if (TextUtils.isEmpty(error))
-                    error = getString(R.string.error_incorrect_password);
-                Toast.makeText(LoginActivity.this, error, Toast.LENGTH_LONG).show();
+                if (handleError(code)) {
+                    //clear the error message, it was handled already
+                    message = null;
+                }
             }
+
+            if (!TextUtils.isEmpty(message))
+                Toast.makeText(LoginActivity.this, message, Toast.LENGTH_LONG).show();
         }
 
         @Override

@@ -54,6 +54,39 @@
                 android:imeActionId="@+id/login"
                 android:imeOptions="actionUnspecified" />
 
+            <EditText
+                android:id="@+id/year"
+                android:visibility="gone"
+                android:singleLine="true"
+                android:maxLines="1"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="Birth Year"
+                android:inputType="number" />
+
+            <EditText
+                android:id="@+id/zip"
+                android:visibility="gone"
+                android:singleLine="true"
+                android:maxLines="1"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="Zip Code"
+                android:inputType="number" />
+
+            <Spinner
+                android:id="@+id/gender"
+                android:visibility="gone"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content" />
+
+            <CheckBox
+                android:id="@+id/optIn"
+                android:visibility="gone"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Have Pandora send me emails" />
+
             <Button android:id="@+id/sign_in_button"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"

@@ -8,7 +8,14 @@ package com.smasher.andora.libpandora;
  */
 
 public class PandoraException extends Exception {
-    public static final int ERROR_LOGIN = 1002;
+    public static final int INVALID_LOGIN = 1002;
+    public static final int INVALID_USERNAME = 1011;
+    public static final int INVALID_PASSWORD = 1012;
+    public static final int USERNAME_ALREADY_EXISTS = 1013;
+    public static final int ZIP_CODE_INVALID = 1024;
+    public static final int BIRTH_YEAR_INVALID = 1025;
+    public static final int BIRTH_YEAR_TOO_YOUNG = 1026;
+    public static final int INVALID_EMAIL = 1029;
 
     private int code = -1;
 
@@ -78,7 +85,7 @@ public class PandoraException extends Exception {
             case 1001:
                 message = "Invalid or Expired Auth Token.";
                 break;
-            case ERROR_LOGIN:
+            case INVALID_LOGIN:
                 message = "Invalid email or password";
                 break;
             case 1003: //LISTENER_NOT_AUTHORIZED
@@ -105,13 +112,13 @@ public class PandoraException extends Exception {
             case 1010:
                 message = "Partner Not Authorized. The app may need to be updated.";
                 break;
-            case 1011:
+            case INVALID_USERNAME:
                 message = "Invalid Username";
                 break;
-            case 1012:
+            case INVALID_PASSWORD:
                 message = "Invalid Password";
                 break;
-            case 1013:
+            case USERNAME_ALREADY_EXISTS:
                 message = "Username Already Exists";
                 break;
             case 1014:
@@ -129,17 +136,20 @@ public class PandoraException extends Exception {
             case 1023:
                 message = "DEVICE_MODEL_INVALID";
                 break;
-            case 1024:
+            case ZIP_CODE_INVALID:
                 message = "Zip Code Invalid";
                 break;
-            case 1025:
+            case BIRTH_YEAR_INVALID:
                 message = "Birth Year Invalid";
                 break;
-            case 1026:
+            case BIRTH_YEAR_TOO_YOUNG:
                 message = "Birth Year Too Young";
                 break;
             case 1027:
                 message = "Invalid Country Code/Gender?";
+                break;
+            case INVALID_EMAIL:
+                message = "This email address does not have a Pandora account"; //Not a documented error?
                 break;
             case 1034:
                 message = "DEVICE_DISABLED";
