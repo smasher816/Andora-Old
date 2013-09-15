@@ -5,10 +5,14 @@ import android.animation.AnimatorListenerAdapter;
 import android.annotation.TargetApi;
 import android.app.Activity;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
+import android.preference.PreferenceManager;
 import android.text.TextUtils;
+import android.text.format.Time;
+import android.util.Base64;
 import android.util.Log;
 import android.view.KeyEvent;
 import android.view.Menu;
@@ -22,11 +26,21 @@ import android.widget.EditText;
 import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
-import android.text.format.Time;
 
 import com.smasher.andora.libpandora.PandoraException;
 import com.smasher.andora.libpandora.PandoraSession;
 import com.smasher.andora.libpandora.Partner;
+
+import java.security.NoSuchAlgorithmException;
+import java.security.SecureRandom;
+import java.security.spec.InvalidKeySpecException;
+import java.security.spec.KeySpec;
+
+import javax.crypto.Cipher;
+import javax.crypto.SecretKey;
+import javax.crypto.SecretKeyFactory;
+import javax.crypto.spec.IvParameterSpec;
+import javax.crypto.spec.PBEKeySpec;
 
 /**
  * Log into Pandora
@@ -297,6 +311,43 @@ public class LoginActivity extends Activity {
         }
     }
 
+    public SecretKey generateKey() {
+        //this method has been purposely omitted to keep the release key (more) private
+        //if you are building this app on your own, you must generate and return your own key
+    }
+    public byte[] generateIV() {
+        //generate a random salt to protect against rainbow tables
+
+        SecureRandom secureRandom = new SecureRandom();
+        byte[] bytes = new byte[16];
+        secureRandom.nextBytes(bytes);
+        return bytes;
+    }
+
+    public String encrypt(SecretKey key, byte iv[], String data) {
+        try {
+            Cipher encryptionCipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
+            encryptionCipher.init(Cipher.ENCRYPT_MODE, key, new IvParameterSpec(iv));
+            byte[] bytes = encryptionCipher.doFinal(data.getBytes());
+            return Base64.encodeToString(bytes, Base64.DEFAULT);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+    public String decrypt(SecretKey key, byte iv[], String data) {
+        try {
+            Cipher encryptionCipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
+            encryptionCipher.init(Cipher.DECRYPT_MODE, key, new IvParameterSpec(iv));
+            byte[] bytes = encryptionCipher.doFinal(Base64.decode(data, Base64.DEFAULT));
+            return new String(bytes);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+
     /**
      * Represents an asynchronous login/registration task used to authenticate
      * the user.
@@ -340,6 +391,19 @@ public class LoginActivity extends Activity {
                         } else {
                             message = "Please consider upgrading to Pandora One.";
                         }
+
+                        /* Store the account credentials in the apps private preferences.
+                           However, anyone with root access can read this file making it somewhat insecure.
+                           Therefore it is stored encrypted to add another layer of security.
+                           Note: Someone with enough motivation and skill could still determine the key.
+                         */
+                        byte salt[] = generateIV();
+                        PreferenceManager.getDefaultSharedPreferences(LoginActivity.this).edit()
+                        .putString("email", email)
+                        .putString("password", encrypt(generateKey(), salt, password))
+                        .putString("salt", Base64.encodeToString(salt, Base64.DEFAULT))
+                        .commit();
+
                         return true;
                     }
                     case FORGOT_PASSWORD: {

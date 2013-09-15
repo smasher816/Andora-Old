@@ -17,6 +17,8 @@ public class PandoraException extends Exception {
     public static final int BIRTH_YEAR_TOO_YOUNG = 1026;
     public static final int INVALID_EMAIL = 1029;
 
+    public static final int NO_CONNECTION = 2001;
+
     private int code = -1;
 
     public PandoraException(int code) {
@@ -163,6 +165,11 @@ public class PandoraException extends Exception {
             case 1037:
                 message = "User Already Used Trial";
                 break;
+
+            case NO_CONNECTION:
+                message = "Could not connect to Pandora server";
+                break;
+
             default:
                 message = "Unknown Error! code="+code;
         }
