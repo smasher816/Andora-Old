@@ -5,7 +5,6 @@ import android.animation.AnimatorListenerAdapter;
 import android.annotation.TargetApi;
 import android.app.Activity;
 import android.content.Intent;
-import android.content.SharedPreferences;
 import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
@@ -41,6 +40,7 @@ import javax.crypto.SecretKey;
 import javax.crypto.SecretKeyFactory;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.PBEKeySpec;
+import javax.crypto.spec.SecretKeySpec;
 
 /**
  * Log into Pandora
@@ -71,10 +71,16 @@ public class LoginActivity extends Activity {
 
         setContentView(R.layout.activity_login);
 
+        Intent intent = getIntent();
+        String email = intent.getStringExtra("email");
+        String password = intent.getStringExtra("password");
+
         // Set up the login form.
         mEmailView = (EditText) findViewById(R.id.email);
+        mEmailView.setText(email);
 
         mPasswordView = (EditText) findViewById(R.id.password);
+        mPasswordView.setText(password);
         mPasswordView.setOnEditorActionListener(new TextView.OnEditorActionListener() {
             @Override
             public boolean onEditorAction(TextView textView, int id, KeyEvent keyEvent) {
@@ -311,11 +317,12 @@ public class LoginActivity extends Activity {
         }
     }
 
-    public SecretKey generateKey() {
+    public static SecretKey generateKey() {
         //this method has been purposely omitted to keep the release key (more) private
         //if you are building this app on your own, you must generate and return your own key
     }
-    public byte[] generateIV() {
+
+    public static byte[] generateIV() {
         //generate a random salt to protect against rainbow tables
 
         SecureRandom secureRandom = new SecureRandom();
@@ -324,10 +331,10 @@ public class LoginActivity extends Activity {
         return bytes;
     }
 
-    public String encrypt(SecretKey key, byte iv[], String data) {
+    public static String encrypt(SecretKey key, byte iv[], String data) {
         try {
             Cipher encryptionCipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
-            encryptionCipher.init(Cipher.ENCRYPT_MODE, key, new IvParameterSpec(iv));
+            encryptionCipher.init(Cipher.ENCRYPT_MODE, new SecretKeySpec(key.getEncoded(), "AES"), new IvParameterSpec(iv));
             byte[] bytes = encryptionCipher.doFinal(data.getBytes());
             return Base64.encodeToString(bytes, Base64.DEFAULT);
         } catch (Exception e) {
@@ -336,10 +343,10 @@ public class LoginActivity extends Activity {
         }
     }
 
-    public String decrypt(SecretKey key, byte iv[], String data) {
+    public static String decrypt(SecretKey key, byte iv[], String data) {
         try {
             Cipher encryptionCipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
-            encryptionCipher.init(Cipher.DECRYPT_MODE, key, new IvParameterSpec(iv));
+            encryptionCipher.init(Cipher.DECRYPT_MODE, new SecretKeySpec(key.getEncoded(), "AES"), new IvParameterSpec(iv));
             byte[] bytes = encryptionCipher.doFinal(Base64.decode(data, Base64.DEFAULT));
             return new String(bytes);
         } catch (Exception e) {
@@ -402,6 +409,7 @@ public class LoginActivity extends Activity {
                         .putString("email", email)
                         .putString("password", encrypt(generateKey(), salt, password))
                         .putString("salt", Base64.encodeToString(salt, Base64.DEFAULT))
+                        .putBoolean("premium", premium)
                         .commit();
 
                         return true;
@@ -432,6 +440,7 @@ public class LoginActivity extends Activity {
 
             if (success) {
                 Intent intent = new Intent(LoginActivity.this, MainActivity.class);
+                intent.putExtra("loggedIn", true);
                 startActivity(intent);
             } else {
                 if (handleError(code)) {
