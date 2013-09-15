@@ -440,8 +440,10 @@ public class LoginActivity extends Activity {
 
             if (success) {
                 Intent intent = new Intent(LoginActivity.this, MainActivity.class);
+                intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
                 intent.putExtra("loggedIn", true);
                 startActivity(intent);
+                LoginActivity.this.finish(); //kill the login page
             } else {
                 if (handleError(code)) {
                     //clear the error message, it was handled already
