@@ -20,6 +20,7 @@ public class MainActivity extends Activity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        Thread.setDefaultUncaughtExceptionHandler(new CrashHandler(this));
         setContentView(R.layout.activity_main);
 
         if (getIntent().getBooleanExtra("loggedIn", false)) {

@@ -68,7 +68,7 @@ public class LoginActivity extends Activity {
         //setTheme(android.R.style.Theme_Holo);
         //setTheme(android.R.style.Theme_Holo_Light);
         super.onCreate(savedInstanceState);
-
+        Thread.setDefaultUncaughtExceptionHandler(new CrashHandler(this));
         setContentView(R.layout.activity_login);
 
         Intent intent = getIntent();

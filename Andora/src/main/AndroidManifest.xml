@@ -9,6 +9,7 @@
         android:targetSdkVersion="18" />
 
     <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
 
     <application
         android:allowBackup="true"
@@ -24,9 +25,13 @@
             </intent-filter>
         </activity>
         <activity
-                android:name="com.smasher.andora.LoginActivity"
-                android:label="Andora"
-                android:windowSoftInputMode="adjustResize|stateVisible" >
+            android:name="com.smasher.andora.LoginActivity"
+            android:label="Andora"
+            android:windowSoftInputMode="adjustResize|stateVisible" >
+        </activity>
+        <activity
+            android:name="com.smasher.andora.ErrorActivity"
+            android:label="@string/title_activity_error" >
         </activity>
     </application>
 
