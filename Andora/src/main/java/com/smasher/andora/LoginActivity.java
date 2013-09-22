@@ -4,12 +4,16 @@ import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
 import android.annotation.TargetApi;
 import android.app.Activity;
+import android.content.Context;
 import android.content.Intent;
 import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
+import android.preference.PreferenceManager;
+import android.provider.Settings.Secure;
 import android.text.format.Time;
 import android.util.Base64;
+import android.util.Log;
 import android.view.KeyEvent;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -25,19 +29,24 @@ import android.widget.Toast;
 
 import com.smasher.andora.libpandora.PandoraException;
 import com.smasher.andora.libpandora.PandoraSession;
+import com.smasher.andora.libpandora.Partner;
 
+import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
+import java.security.spec.InvalidKeySpecException;
+import java.security.spec.KeySpec;
 
 import javax.crypto.Cipher;
 import javax.crypto.SecretKey;
+import javax.crypto.SecretKeyFactory;
 import javax.crypto.spec.IvParameterSpec;
+import javax.crypto.spec.PBEKeySpec;
 import javax.crypto.spec.SecretKeySpec;
 
 import static com.smasher.andora.libpandora.PandoraException.Error.BIRTH_YEAR_INVALID;
 import static com.smasher.andora.libpandora.PandoraException.Error.BIRTH_YEAR_TOO_YOUNG;
 import static com.smasher.andora.libpandora.PandoraException.Error.INVALID_PASSWORD;
 import static com.smasher.andora.libpandora.PandoraException.Error.INVALID_USERNAME;
-import static com.smasher.andora.libpandora.PandoraException.Error.UNKNOWN_ERROR;
 import static com.smasher.andora.libpandora.PandoraException.Error.ZIP_CODE_INVALID;
 
 /**
@@ -312,9 +321,17 @@ public class LoginActivity extends Activity {
         }
     }
 
-    public static SecretKey generateKey() {
-        //this method has been purposely omitted to keep the release key (more) private
-        //if you are building this app on your own, you must generate and return your own key
+    public static SecretKey generateKey(Context context) {
+        //NOTE: this is a sample method that uses your ANDROID_ID to generate the encryption key.
+        //the real method will be different in order to make it more difficult for malicious people to decrypt peoples passwords.
+        try {
+            SecretKeyFactory factory = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA1");
+            KeySpec keySpec = new PBEKeySpec(Secure.getString(context.getContentResolver(), Secure.ANDROID_ID).toCharArray(), new byte[] {0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0A, 0x0B, 0x0C, 0x0D, 0x0E, 0x0F}, 1000, 256);
+            SecretKey key = factory.generateSecret(keySpec);
+            return key;
+        } catch (NoSuchAlgorithmException e) {
+        } catch (InvalidKeySpecException e) {}
+        return null;
     }
 
     public static byte[] generateIV() {
@@ -378,8 +395,7 @@ public class LoginActivity extends Activity {
         @Override
         protected Boolean doInBackground(Void... params) {
             try {
-                throw new PandoraException(UNKNOWN_ERROR);
-                /*pandora.partnerLogin(Partner.PARTNER_ANDROID);
+                pandora.partnerLogin(Partner.PARTNER_ANDROID);
 
                 switch (mode) {
                     case SIGN_IN: {
@@ -389,20 +405,17 @@ public class LoginActivity extends Activity {
                             Log.d("Andora", "/Login: " + "User supports Pandora One. Upgrading connection.");
                             pandora.partnerLogin(Partner.PARTNER_PANDORA_ONE);
                             pandora.userLogin(email, password);
-                            message = "Thank you for using Pandora One!";
-                        } else {
-                            message = "Please consider upgrading to Pandora One.";
                         }
 
                         /* Store the account credentials in the apps private preferences.
                            However, anyone with root access can read this file making it somewhat insecure.
                            Therefore it is stored encrypted to add another layer of security.
                            Note: Someone with enough motivation and skill could still determine the key.
-                         *//*
+                         */
                         byte salt[] = generateIV();
                         PreferenceManager.getDefaultSharedPreferences(LoginActivity.this).edit()
                         .putString("email", email)
-                        .putString("password", encrypt(generateKey(), salt, password))
+                        .putString("password", encrypt(generateKey(LoginActivity.this), salt, password))
                         .putString("salt", Base64.encodeToString(salt, Base64.DEFAULT))
                         .putBoolean("premium", premium)
                         .commit();
@@ -411,15 +424,14 @@ public class LoginActivity extends Activity {
                     }
                     case FORGOT_PASSWORD: {
                         pandora.emailPassword(email);
-                        message = "Password emailed to " + email;
+                        Toast.makeText(LoginActivity.this, "Password emailed to " + email, Toast.LENGTH_LONG).show();
                         return false;
                     }
                     case CREATE_ACCOUNT: {
                         pandora.createUser(email, password, year, zip, gender, opt);
-                        message = "Welcome to Andora";
                         return true;
                     }
-                }*/
+                }
             } catch (PandoraException e) {
                 error = e.getError();
             }
