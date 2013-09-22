@@ -53,7 +53,7 @@ public class MainActivity extends Activity {
         boolean premium;
 
         String message;
-        int code = -1;
+        PandoraException.Error error;
 
         UserLoginTask(String email, String password, String salt, boolean premium) {
             this.email = email;
@@ -75,8 +75,7 @@ public class MainActivity extends Activity {
                 pandora.userLogin(email, password);
                 return true;
             } catch (PandoraException e) {
-                code = e.getCode();
-                message = e.getMessage();
+                error = e.getError();
             }
 
             return false;
@@ -87,8 +86,8 @@ public class MainActivity extends Activity {
             if (success) {
                 postLogin();
             } else {
-                if (!TextUtils.isEmpty(message))
-                    Toast.makeText(MainActivity.this, message, Toast.LENGTH_LONG).show();
+                if (error != null)
+                    Toast.makeText(MainActivity.this, error.getMessage(MainActivity.this), Toast.LENGTH_LONG).show();
 
                 Intent intent = new Intent(MainActivity.this, LoginActivity.class);
                 intent.putExtra("email", email);

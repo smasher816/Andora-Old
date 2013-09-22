@@ -183,7 +183,7 @@ public class PandoraSession {
             String ret = post(url, str);
             if (ret == null) {
                 log("Error: No response");
-                throw new PandoraException(PandoraException.NO_CONNECTION);
+                throw new PandoraException(PandoraException.Error.NO_CONNECTION);
             }
 
             JSONObject json = new JSONObject(ret);
@@ -195,7 +195,7 @@ public class PandoraSession {
                 return result;
             } else {
                 int err = json.getInt("code");
-                throw new PandoraException(err);
+                throw new PandoraException(PandoraException.Error.getEnum(err));
             }
 
         } catch (JSONException e) {

@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="error_unknown">An unknown error has occurred. The app should be updated to fix this issue. Please email me for support.</string>
+    <string name="error_api_changed">Ohh no! I knew this day would come eventually. It looks like Pandora has changed their API, meaning that the Andora app must be updated. Depending on the severity of the change this may take a while. Please check online for informational updates.</string>
+    <string name="error_internal">An internal error has occurred. Pandora may have temporarily blocked your account. Please try again later.</string>
+    <string name="error_maintenance_mode">Pandora is currently under maintenance. Please try again later.</string>
+    <string name="error_licensing_restrictions">Pandora is not officially available in your country. Don\'t fret, you may be able to use a proxy to bypass this error :)</string>
+    <string name="error_insufficient_connectivity">Pandora believes you have insufficient connectivity. This may mean that messages are arriving later than expected. Please make sure your clock is set correctly and try again.</string>
+    <string name="error_read_only_mode">Pandora is currently in read only mode. Please try again later.</string>
+    <string name="error_invalid_auth_token">Your user authentication token is no longer valid. This error should not occur. Please email me for support.</string>
+    <string name="error_invalid_partner_login">Pandora has changed their authentication credentials. The Andora app must be updated. Please check online for informational updates.</string>
+    <string name="error_listener_not_authorized">You are not authorized to listen. It is possible your Pandora One subscription has expired.</string>
+    <string name="error_user_not_authorized">You are not authorized to perform this action. This error should not occur. Please email me for support.</string>
+    <string name="error_max_stations_reached">Station limit reached. You may not create any more stations :(</string>
+    <string name="error_station_does_not_exist">This station no longer exists. Please choose a new one.</string>
+    <string name="error_complimentary_period_already_in_use">You are already using your complimentary trial.</string>
+    <string name="error_call_not_allowed">This request is not allowed. This error should not occur. Please email me for support.</string>
+    <string name="error_device_not_found">Device not found.</string>
+    <string name="error_partner_not_authorized">Partner not authorized.</string>
+    <string name="error_invalid_username">This email address is invalid</string>
+    <string name="error_invalid_password">Your password must be at least 5 characters</string>
+    <string name="error_username_already_exists">This email is already in use</string>
+    <string name="error_device_already_associated_to_account">This device is already associated to your account.</string>
+    <string name="error_upgrade_device_model_invalid">Upgrade model is invalid. Even I am not sure what this means. Ohh well, I\'m sure it\'s something I will eventually need to fix</string>
+    <string name="error_explicit_pin_incorrect">This pin is incorrect</string> <!-- Where do you use a PIN for Pandora? -->
+    <string name="error_explicit_pin_malformed">This pin is malformed</string>
+    <string name="error_device_model_invalid">This device model is invalid. It is possible Pandora has changed their authentication credentials and that the app must be updated. Please email me for support.</string>
+    <string name="error_zip_code_invalid">This zip code is invalid</string>
+    <string name="error_birth_year_invalid">This year is invalid</string>
+    <string name="error_birth_year_too_young">You are too young</string>
+    <string name="error_invalid_country_gender">Invalid country code or gender. This error should not occur. Please email me for support.</string>
+    <string name="error_user_not_registered">There is no Pandora account associated with this email</string>
+    <string name="error_device_disabled">This device is disabled</string>
+    <string name="error_daily_trial_limit_reached">You have reached your daily trial limit. Please come back tomorrow.</string>
+    <string name="error_invalid_sponsor">Invalid sponsor. Please use a valid sponsor code.</string>
+    <string name="error_user_already_used_trial">Sorry but you have already used your trial.</string>
+</resources>

@@ -1,6 +1,7 @@
 package com.smasher.andora;
 
 import android.app.Activity;
+import android.app.AlertDialog;
 import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
@@ -29,11 +30,6 @@ public class ErrorActivity extends Activity implements View.OnClickListener {
         file = intent.getStringExtra("file");
 
         String msg = intent.getStringExtra("exception") + ": " + intent.getStringExtra("message");
-
-        String error = intent.getStringExtra("error");
-        if (!TextUtils.isEmpty(error))
-            msg += "\nError code: " + error;
-
         String info = intent.getStringExtra("info");
         if (!TextUtils.isEmpty(info))
             msg += "\n\n" + info;
@@ -53,6 +49,14 @@ public class ErrorActivity extends Activity implements View.OnClickListener {
                 startActivity(intent);
                 break;
         }
+    }
+
+    public static void errorPopup(Context context, PandoraException.Error error) {
+        new AlertDialog.Builder(context)
+                .setTitle("Error " + error.getCode() + ": " + error.name())
+                .setMessage(error.getMessage(context))
+                .setNeutralButton("Ok", null)
+                .create().show();
     }
 }
 
@@ -94,8 +98,6 @@ class CrashHandler implements Thread.UncaughtExceptionHandler {
 
         intent.putExtra("exception", exception.getClass().getName());
         intent.putExtra("message", exception.getMessage());
-        if (exception instanceof PandoraException)
-            intent.putExtra("code", ((PandoraException)exception).getCode());
         intent.putExtra("info", getInfo(exception));
         intent.putExtra("file", file);
         context.startActivity(intent);

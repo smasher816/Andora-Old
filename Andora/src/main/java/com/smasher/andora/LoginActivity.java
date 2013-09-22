@@ -8,11 +8,8 @@ import android.content.Intent;
 import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
-import android.preference.PreferenceManager;
-import android.text.TextUtils;
 import android.text.format.Time;
 import android.util.Base64;
-import android.util.Log;
 import android.view.KeyEvent;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -28,19 +25,20 @@ import android.widget.Toast;
 
 import com.smasher.andora.libpandora.PandoraException;
 import com.smasher.andora.libpandora.PandoraSession;
-import com.smasher.andora.libpandora.Partner;
 
-import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
-import java.security.spec.InvalidKeySpecException;
-import java.security.spec.KeySpec;
 
 import javax.crypto.Cipher;
 import javax.crypto.SecretKey;
-import javax.crypto.SecretKeyFactory;
 import javax.crypto.spec.IvParameterSpec;
-import javax.crypto.spec.PBEKeySpec;
 import javax.crypto.spec.SecretKeySpec;
+
+import static com.smasher.andora.libpandora.PandoraException.Error.BIRTH_YEAR_INVALID;
+import static com.smasher.andora.libpandora.PandoraException.Error.BIRTH_YEAR_TOO_YOUNG;
+import static com.smasher.andora.libpandora.PandoraException.Error.INVALID_PASSWORD;
+import static com.smasher.andora.libpandora.PandoraException.Error.INVALID_USERNAME;
+import static com.smasher.andora.libpandora.PandoraException.Error.UNKNOWN_ERROR;
+import static com.smasher.andora.libpandora.PandoraException.Error.ZIP_CODE_INVALID;
 
 /**
  * Log into Pandora
@@ -168,12 +166,12 @@ public class LoginActivity extends Activity {
         if (loginMode == LoginType.CREATE_ACCOUNT) {
             // Check for a valid zip code.
             if (!zip.matches("^\\d{5}([\\-]?\\d{4})?$")) {
-                cancel = handleError(PandoraException.ZIP_CODE_INVALID);
+                cancel = handleError(ZIP_CODE_INVALID);
             }
 
             // Check for a valid birth year.
             if (!year.matches("^\\d{4}")) {
-                cancel = handleError(PandoraException.BIRTH_YEAR_INVALID);
+                cancel = handleError(BIRTH_YEAR_INVALID);
             } else {
                 try {
                     iYear = Integer.parseInt(year);
@@ -181,11 +179,11 @@ public class LoginActivity extends Activity {
                     time.setToNow();
 
                     if (iYear<1900)
-                        cancel = handleError(PandoraException.BIRTH_YEAR_INVALID);
+                        cancel = handleError(BIRTH_YEAR_INVALID);
                     else if (iYear>time.year-13)
-                        cancel = handleError(PandoraException.BIRTH_YEAR_TOO_YOUNG);
+                        cancel = handleError(BIRTH_YEAR_TOO_YOUNG);
                 } catch (NumberFormatException e) {
-                    cancel = handleError(PandoraException.BIRTH_YEAR_INVALID);
+                    cancel = handleError(BIRTH_YEAR_INVALID);
                 }
             }
         }
@@ -193,13 +191,13 @@ public class LoginActivity extends Activity {
         if (loginMode != LoginType.FORGOT_PASSWORD) {
             // Check for a valid password.
             if (password.length() < 5) {
-                cancel = handleError(PandoraException.INVALID_PASSWORD);
+                cancel = handleError(INVALID_PASSWORD);
             }
         }
 
         // Check for a valid email address.
         if (!email.contains("@") || !email.contains(".") || email.contains(" ")) {
-            cancel = handleError(PandoraException.INVALID_USERNAME);
+            cancel = handleError(INVALID_USERNAME);
         }
 
         if (!cancel) {
@@ -279,41 +277,38 @@ public class LoginActivity extends Activity {
         }
     }
 
-    protected boolean handleError(int code) {
-        switch (code) {
-            case PandoraException.INVALID_LOGIN:
+    protected boolean handleError(PandoraException.Error error) {
+        switch (error) {
+            case INVALID_LOGIN:
                 Toast.makeText(LoginActivity.this, getString(R.string.error_login_failure), Toast.LENGTH_LONG).show();
                 return true;
-            case PandoraException.INVALID_USERNAME:
-                mEmailView.setError(getString(R.string.error_invalid_email));
+            case INVALID_USERNAME:
+                mEmailView.setError(getString(R.string.error_invalid_username));
                 mEmailView.requestFocus();
                 return true;
-            case PandoraException.INVALID_PASSWORD:
+            case INVALID_PASSWORD:
                 mPasswordView.setError(getString(R.string.error_invalid_password));
                 mPasswordView.requestFocus();
                 return true;
-            case PandoraException.USERNAME_ALREADY_EXISTS:
-                mEmailView.setError(getString(R.string.error_email_exists));
-                mEmailView.requestFocus();
-                return true;
-            case PandoraException.ZIP_CODE_INVALID:
-                mZipView.setError(getString(R.string.error_invalid_zip));
+            case ZIP_CODE_INVALID:
+                mZipView.setError(getString(R.string.error_zip_code_invalid));
                 mZipView.requestFocus();
                 return true;
-            case PandoraException.BIRTH_YEAR_INVALID:
-                mYearView.setError(getString(R.string.error_invalid_year));
+            case BIRTH_YEAR_INVALID:
+                mYearView.setError(getString(R.string.error_birth_year_invalid));
                 mYearView.requestFocus();
                 return true;
-            case PandoraException.BIRTH_YEAR_TOO_YOUNG:
-                mYearView.setError(getString(R.string.error_under_age));
+            case BIRTH_YEAR_TOO_YOUNG:
+                mYearView.setError(getString(R.string.error_birth_year_too_young));
                 mYearView.requestFocus();
                 return true;
-            case PandoraException.INVALID_EMAIL:
-                mEmailView.setError(getString(R.string.error_email_exists));
+            case USERNAME_ALREADY_EXISTS:
+                mEmailView.setError(getString(R.string.error_username_already_exists));
                 mEmailView.requestFocus();
                 return true;
             default:
-                return false;
+                ErrorActivity.errorPopup(this, error);
+                return true;
         }
     }
 
@@ -367,8 +362,7 @@ public class LoginActivity extends Activity {
         boolean opt;
 
         boolean premium;
-        String message;
-        int code = -1;
+        PandoraException.Error error;
 
         UserLoginTask(LoginType mode, String email, String password, int year, String zip, String gender, boolean opt) {
             pandora = new PandoraSession();
@@ -384,7 +378,8 @@ public class LoginActivity extends Activity {
         @Override
         protected Boolean doInBackground(Void... params) {
             try {
-                pandora.partnerLogin(Partner.PARTNER_ANDROID);
+                throw new PandoraException(UNKNOWN_ERROR);
+                /*pandora.partnerLogin(Partner.PARTNER_ANDROID);
 
                 switch (mode) {
                     case SIGN_IN: {
@@ -403,7 +398,7 @@ public class LoginActivity extends Activity {
                            However, anyone with root access can read this file making it somewhat insecure.
                            Therefore it is stored encrypted to add another layer of security.
                            Note: Someone with enough motivation and skill could still determine the key.
-                         */
+                         *//*
                         byte salt[] = generateIV();
                         PreferenceManager.getDefaultSharedPreferences(LoginActivity.this).edit()
                         .putString("email", email)
@@ -424,10 +419,9 @@ public class LoginActivity extends Activity {
                         message = "Welcome to Andora";
                         return true;
                     }
-                }
+                }*/
             } catch (PandoraException e) {
-                code = e.getCode();
-                message = e.getMessage();
+                error = e.getError();
             }
 
             return false;
@@ -445,14 +439,8 @@ public class LoginActivity extends Activity {
                 startActivity(intent);
                 LoginActivity.this.finish(); //kill the login page
             } else {
-                if (handleError(code)) {
-                    //clear the error message, it was handled already
-                    message = null;
-                }
+                handleError(error);
             }
-
-            if (!TextUtils.isEmpty(message))
-                Toast.makeText(LoginActivity.this, message, Toast.LENGTH_LONG).show();
         }
 
         @Override
